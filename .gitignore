@@ -1,0 +1,15 @@
+# 개인 PC 경로가 들어 있어 올리지 않는 것
+handoff/
+CLAUDE.md
+AGENTS.md
+START_HERE.md
+local-tools/
+local.properties
+
+# 빌드 산출물
+.gradle/
+.idea/
+.kotlin/
+build/
+*.iml
+captures/

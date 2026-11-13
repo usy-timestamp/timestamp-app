@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- 제품 화면은 위치를 쓰지 않으므로 SDK가 더한 연결 권한도 뺀다 -->
+    <uses-permission
+        android:name="ai.pleos.playground.service.location.fused.FUSED_LOCATION_BINDING"
+        tools:node="remove" />
+</manifest>
