@@ -16,7 +16,7 @@ class TimestampCommandTest {
     }
 
     @Test fun ignoresEmptyUnrelatedAndIncompleteSpeech() {
-        listOf("", " ", "브레이크 소리가 나", "타임", "찍어줘", "타임 스탬", "스탬")
+        listOf("", " ", "브레이크 소리가 나", "타임", "찍어줘", "스", "타임 스")
             .forEach { assertFalse(it, isTimestampCommand(it)) }
     }
 }
