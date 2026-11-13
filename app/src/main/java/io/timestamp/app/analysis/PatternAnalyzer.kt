@@ -5,8 +5,9 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 object BodyParts {
-    val touchParts = listOf("왼쪽 앞바퀴", "오른쪽 앞바퀴", "왼쪽 뒷바퀴", "오른쪽 뒷바퀴", "엔진룸", "실내")
-    val extraParts = listOf("하부", "잘 모르겠어요")
+    val touchParts = listOf("왼쪽 앞바퀴", "오른쪽 앞바퀴", "왼쪽 뒷바퀴", "오른쪽 뒷바퀴",
+        "엔진룸", "대시보드", "왼쪽 문", "오른쪽 문", "실내", "트렁크")
+    val extraParts = listOf("하부", "지붕", "잘 모르겠어요")
     val all = touchParts + extraParts
 
     // 예전 기록을 그대로 두면서 같은 부위끼리 묶고 같은 이름으로 보여 준다.

@@ -54,6 +54,21 @@ class CaptureRepositoryTest {
         assertTrue(repo.find("a")!!.bodyMarks.isEmpty())
     }
 
+    @Test fun newBodyPartsAreSavedAndReplacedWithoutChangingOtherRecords() = runTest {
+        val repo = InMemoryCaptureRepository()
+        add(repo, "new"); add(repo, "existing")
+        val added = setOf("대시보드", "왼쪽 문", "오른쪽 문", "트렁크", "지붕")
+        val existing = setOf("앞 왼쪽 바퀴", "엔진룸", "실내", "하부")
+        repo.saveBodyMarks("existing", existing)
+        repo.saveBodyMarks("new", added)
+        assertEquals(added, repo.find("new")!!.bodyMarks.map { it.part }.toSet())
+        assertEquals(added, repo.observeRecords().first().single { it.capture.id == "new" }
+            .bodyMarks.map { it.part }.toSet())
+        repo.saveBodyMarks("new", setOf("트렁크"))
+        assertEquals(listOf("트렁크"), repo.bodyMarks("new").map { it.part })
+        assertEquals(existing, repo.find("existing")!!.bodyMarks.map { it.part }.toSet())
+    }
+
     @Test fun repairSavesLinksAndOnlyChangesSelectedRecords() = runTest {
         val repo = InMemoryCaptureRepository()
         add(repo, "a"); add(repo, "b"); add(repo, "c")

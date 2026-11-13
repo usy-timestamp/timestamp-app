@@ -92,6 +92,27 @@ class PatternAnalyzerTest {
         assertTrue(groups.all { it.count == 2 && it.name == "${it.part} 소음" })
     }
 
+    @Test fun pickerCatalogueIncludesExistingAndNewPartsWithoutDuplicates() {
+        assertEquals(listOf("왼쪽 앞바퀴", "오른쪽 앞바퀴", "왼쪽 뒷바퀴", "오른쪽 뒷바퀴",
+            "엔진룸", "대시보드", "왼쪽 문", "오른쪽 문", "실내", "트렁크"), BodyParts.touchParts)
+        assertEquals(listOf("하부", "지붕", "잘 모르겠어요"), BodyParts.extraParts)
+        assertEquals(13, BodyParts.all.distinct().size)
+    }
+
+    @Test fun newPartsMakeSeparateGroupsAndReportTitles() {
+        val added = listOf("대시보드", "왼쪽 문", "오른쪽 문", "트렁크", "지붕")
+        val values = added.flatMap { part -> listOf(
+            record("$part-a", listOf(part, part)), record("$part-b", listOf(part)),
+        ) } + record("cabin", listOf("실내"))
+        val groups = analyzer.analyze(values)
+        assertEquals(added.toSet(), groups.map { it.part }.toSet())
+        groups.forEach { group ->
+            assertEquals("${group.part} 소음", group.name)
+            assertEquals(2, group.count)
+            assertTrue(group.records.all { it.bodyMarks.all { mark -> mark.part == group.part } })
+        }
+    }
+
     @Test fun dashcamWindowsIncludeTriggerAndFiveSecondsBeforeAcrossMidnight() {
         val a = record("a", time = 2_000L)
         val b = record("b", time = 90_000L, status = "REPAIRED")
@@ -104,7 +125,7 @@ class PatternAnalyzerTest {
         val old = listOf("앞 왼쪽 바퀴", "앞 오른쪽 바퀴", "뒤 왼쪽 바퀴", "뒤 오른쪽 바퀴")
         val current = listOf("왼쪽 앞바퀴", "오른쪽 앞바퀴", "왼쪽 뒷바퀴", "오른쪽 뒷바퀴")
         assertEquals(current, old.map(BodyParts::displayName))
-        (current + listOf("엔진룸", "실내", "하부", "잘 모르겠어요", "기타")).forEach {
+        (BodyParts.all + "기타").forEach {
             assertEquals(it, BodyParts.displayName(it))
         }
         val original = record("old", old)

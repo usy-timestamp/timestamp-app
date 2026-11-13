@@ -6,6 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import io.timestamp.app.analysis.BodyParts
 import io.timestamp.app.data.CaptureRecord
 import io.timestamp.app.ui.theme.*
@@ -56,7 +57,8 @@ fun RecordDetailScreen(record: CaptureRecord, driving: DrivingState, back: () ->
             values()
             actions()
         } else Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(24.sdp)) {
-            Column(Modifier.width(400.sdp).fillMaxHeight().verticalScroll(rememberScrollState())) {
+            Column(Modifier.width(maxOf(CarDiagramLayout.pickerWidth.sdp, CarDiagramLayout.minimumPickerWidth.dp))
+                .fillMaxHeight().verticalScroll(rememberScrollState())) {
                 PartPicker(selected, toggle, Modifier.fillMaxWidth())
             }
             Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.sdp)) {
