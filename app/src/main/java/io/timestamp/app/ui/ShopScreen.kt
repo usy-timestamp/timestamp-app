@@ -16,7 +16,7 @@ fun ShopScreen(group: SymptomGroup, close: () -> Unit, reminder: Boolean, toggle
         .verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.sdp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
-                Label("정비사님께 보여 드리는 화면", 18, AppColors.textSecondary)
+                Label("정비사님께 보여 드리는 화면", AppType.secondary, AppColors.textSecondary)
                 Label(group.name, 36, bold = true)
             }
             Action("닫기", close, secondary = true)
@@ -37,7 +37,5 @@ fun ShopScreen(group: SymptomGroup, close: () -> Unit, reminder: Boolean, toggle
                 GroupSummary(group, Modifier.fillMaxWidth())
             }
         }
-        Action("시운전 알림", toggleReminder, if (portrait) Modifier.fillMaxWidth() else Modifier, enabled = !busy)
-        Label("시운전 알림 ${if (reminder) "켜짐" else "꺼짐"}. 알림 기능은 준비 중이며 선택만 저장돼요.", 14, AppColors.textSecondary)
     }
 }

@@ -22,7 +22,7 @@ fun DrivingScreen(driving: DrivingState, todayCount: Int) {
             }
             GearChip(driving)
         }
-        Box(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), Alignment.Center) {
+        Box(Modifier.weight(1f).fillMaxWidth(), Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(28.sdp)) {
                 LineIcon("mic", Modifier.size(96.sdp))
                 Label("기록은 정차 후 확인할 수 있어요", if (portrait) 28 else 36, bold = true)

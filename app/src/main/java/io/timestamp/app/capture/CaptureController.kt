@@ -55,6 +55,7 @@ class CaptureController(
 
     fun trigger(kind: String, memo: String? = null,
                 onAccepted: ((CaptureEntity) -> Unit)? = null,
+                onFailure: ((Exception) -> Unit)? = null,
                 afterSaved: (suspend (CaptureRecord) -> Unit)? = null): Boolean = synchronized(lock) {
         require(kind in TriggerKind.values)
         val worker = runningScope ?: return false
@@ -89,6 +90,7 @@ class CaptureController(
                 throw e
             } catch (e: Exception) {
                 onError(e)
+                onFailure?.invoke(e)
             }
         }
         true

@@ -12,7 +12,8 @@ object TriggerKind {
     const val VOICE = "VOICE"
     const val DEBUG = "DEBUG"
     const val WARNING_LIGHT = "WARNING_LIGHT"
-    val values = setOf(VOICE, DEBUG, WARNING_LIGHT)
+    const val GLEO = "GLEO"
+    val values = setOf(VOICE, DEBUG, WARNING_LIGHT, GLEO)
 }
 
 @Entity(tableName = "captures")

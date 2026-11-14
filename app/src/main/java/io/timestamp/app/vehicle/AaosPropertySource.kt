@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class AaosPropertySource(
     private val context: Context,
     private val clock: Clock = WallClock,
+    private val gearOnly: Boolean = false,
 ) : VehicleSignalSource {
     private val lock = Any()
     private var car: Car? = null
@@ -40,7 +41,7 @@ class AaosPropertySource(
                 car = Car.createCar(context)
                 manager = car?.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager
                 try {
-                    uxManager = car?.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager
+                    if (!gearOnly) uxManager = car?.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager
                     driving.value = driving.value.copy(
                         restricted = uxManager?.currentCarUxRestrictions?.isRequiresDistractionOptimization == true,
                     )
@@ -48,8 +49,8 @@ class AaosPropertySource(
                 } catch (_: Exception) { }
                 val properties = manager ?: return
                 watch(properties, VehiclePropertyIds.GEAR_SELECTION)
-                watch(properties, VehiclePropertyIds.PERF_VEHICLE_SPEED)
-                watch(properties, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE)
+                if (!gearOnly) watch(properties, VehiclePropertyIds.PERF_VEHICLE_SPEED)
+                if (!gearOnly) watch(properties, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE)
             } catch (_: Exception) {
                 sample = SignalSample(clock.nowMs())
             }
@@ -63,8 +64,8 @@ class AaosPropertySource(
             callbacks.forEach { try { properties.unregisterCallback(it) } catch (_: Exception) { } }
             callbacks.clear()
             watch(properties, VehiclePropertyIds.GEAR_SELECTION)
-            watch(properties, VehiclePropertyIds.PERF_VEHICLE_SPEED)
-            watch(properties, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE)
+            if (!gearOnly) watch(properties, VehiclePropertyIds.PERF_VEHICLE_SPEED)
+            if (!gearOnly) watch(properties, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE)
         }
     }
 

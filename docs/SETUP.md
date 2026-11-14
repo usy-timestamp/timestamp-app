@@ -14,7 +14,7 @@
 | JDK 17, Android 플랫폼 34, 빌드 도구 34.0.0의 원본 압축 파일 | 다시 풀어서 사용 |
 | Gradle 8.7 래퍼와 캐시 | 그대로 사용 |
 | AAOS로 기어를 읽는 방식 | 같은 API를 Kotlin으로 다시 작성 |
-| Gleo 스키마와 수신 방식 | 참고만. 스키마 승인을 신청할 수 없어 음성은 SpeechToText SDK가 1순위 |
+| Gleo 스키마와 수신 방식 | RECORD_VEHICLE_MOMENT 수신 경로와 기존 SpeechToText 호출을 함께 사용 |
 | P단에서만 화면을 여는 규칙 | 그대로 유지 |
 
 재사용하지 않은 것: 영상 재생 화면, PC 데모 서버, 테스트 영상.

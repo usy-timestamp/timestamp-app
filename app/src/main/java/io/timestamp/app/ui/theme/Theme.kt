@@ -5,37 +5,41 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-object AppColors {
-    val background = Color(0xFF0A0E24)
-    val rail = Color(0xFF0F1430)
-    val surface = Color(0xFF151A38)
-    val surfaceRaised = Color(0xFF0F1430)
+data class AppPalette(val dark: Boolean) {
+    val background = if (dark) Color(0xFF0A0E24) else Color(0xFFF7F8FA)
+    val rail = if (dark) Color(0xFF0F1430) else Color(0xFFEDEEF2)
+    val surface = if (dark) Color(0xFF151A38) else Color.White
+    val surfaceRaised = if (dark) Color(0xFF313236) else Color(0xFFEDEEF2)
     val selected get() = primary
-    val border = Color.White.copy(alpha = .08f)
-    val borderStrong = Color.White.copy(alpha = .42f)
-    val textPrimary = Color(0xFFFFFFFF)
-    val textSecondary = Color(0xFFA6AED2)
-    val textTertiary = Color(0xFFA6AED2)
-    val textOnCard = Color(0xFFFFFFFF)
+    val border = (if (dark) Color.White else Color(0xFF131417)).copy(alpha = .08f)
+    val borderStrong = (if (dark) Color.White else Color(0xFF131417)).copy(alpha = .42f)
+    val textPrimary = if (dark) Color.White else Color(0xFF131417)
+    val textSecondary = textPrimary.copy(alpha = if (dark) .84f else .72f)
+    val textTertiary = textPrimary.copy(alpha = if (dark) .64f else .56f)
+    val textOnCard = if (dark) Color.White else Color(0xFF131417)
     val primary = Color(0xFFC6FF4D)
     val onPrimary = Color(0xFF10160A)
-    val primaryText = primary
+    val primaryText = if (dark) primary else Color(0xFF385800)
     val finding = primary
-    val findingText = primary
-    val findingTint = Color(0xFF1C2249)
-    val resolved = Color(0xFF43D17A)
-    val resolvedText = Color(0xFF43D17A)
-    val danger = Color(0xFFFF8A8A)
+    val findingText = primaryText
+    val findingTint = if (dark) Color(0xFF1C2249) else Color(0xFFF0F4E8)
+    val resolved = if (dark) Color(0xFF00E074) else Color(0xFF007D40)
+    val resolvedText = if (dark) Color(0xFF00E074) else Color(0xFF007D40)
+    val danger = if (dark) Color(0xFFFF4C28) else Color(0xFFBD2609)
 }
+
+val LocalAppColors = androidx.compose.runtime.staticCompositionLocalOf { AppPalette(true) }
+val AppColors: AppPalette @Composable get() = LocalAppColors.current
 
 object AppType {
     const val screenTitle = 36
-    const val cardTitle = 20
-    const val body = 18
-    const val secondary = 18
-    const val graphAxis = 14
-    const val shopSentence = 46
-    const val conditionSentence = 42
+    const val cardTitle = 28
+    const val body = 26
+    const val secondary = 24
+    const val caption = 20
+    const val graphAxis = 20
+    const val shopSentence = 48
+    const val conditionSentence = 40
 }
 
 object AppCorners {
@@ -47,10 +51,14 @@ object AppCorners {
 
 @Composable
 fun TimestampTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = darkColorScheme(
+    val palette = AppPalette(androidx.compose.foundation.isSystemInDarkTheme())
+    androidx.compose.runtime.CompositionLocalProvider(LocalAppColors provides palette) {
+    val scheme = if (palette.dark) darkColorScheme() else androidx.compose.material3.lightColorScheme()
+    MaterialTheme(colorScheme = scheme.copy(
         primary = AppColors.primary, onPrimary = AppColors.onPrimary,
         background = AppColors.background, surface = AppColors.surface,
         onBackground = AppColors.textPrimary, onSurface = AppColors.textPrimary,
         secondary = AppColors.finding, error = AppColors.danger,
     ), content = content)
+    }
 }

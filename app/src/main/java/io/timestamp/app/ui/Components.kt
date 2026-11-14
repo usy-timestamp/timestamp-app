@@ -15,6 +15,8 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.Modifier
@@ -38,35 +40,38 @@ import java.util.Locale
 
 @Composable
 fun Label(value: String, size: Int = AppType.body, color: Color = AppColors.textPrimary,
-          bold: Boolean = false, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
-    Text(value, modifier, color, fontSize = size.coerceAtLeast(14).ssp, lineHeight = size.coerceAtLeast(14).ssp * 1.45f,
+          bold: Boolean = false, modifier: Modifier = Modifier, maxLines: Int = 3, textAlign: androidx.compose.ui.text.style.TextAlign? = null) {
+    Text(value, modifier, color, fontSize = size.coerceAtLeast(20).ssp, lineHeight = when (size) {
+            36 -> 44; 28 -> 36; 26 -> 34; 24 -> 28; 20 -> 24; 32 -> 40; 40 -> 52; 48 -> 64; else -> (size * 1.3f).toInt()
+        }.ssp,
         fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
-        maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+        textAlign = textAlign, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
 }
 
 @Composable
-fun Panel(modifier: Modifier = Modifier, finding: Boolean = false, padding: Int = 24,
+fun Panel(modifier: Modifier = Modifier, finding: Boolean = false, padding: Int = 24, popup: Boolean = false,
           content: @Composable ColumnScope.() -> Unit) {
     Surface(modifier, shape = RoundedCornerShape(AppCorners.card.sdp),
-        color = if (finding) AppColors.findingTint else AppColors.surface,
-        border = BorderStroke((if (finding) 2 else 1).sdp, if (finding) AppColors.finding else AppColors.border)) {
+        color = if (popup) AppColors.surfaceRaised else if (finding) AppColors.findingTint else AppColors.surface,
+        border = BorderStroke((if (finding) 2 else 1).sdp, if (finding) AppColors.findingText else AppColors.border)) {
         Column(Modifier.padding(padding.sdp), verticalArrangement = Arrangement.spacedBy(14.sdp), content = content)
     }
 }
 
 @Composable
 fun Action(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
-           secondary: Boolean = false, enabled: Boolean = true, height: Int = 58, danger: Boolean = false) {
+           secondary: Boolean = false, enabled: Boolean = true, height: Int = 58, danger: Boolean = false, busy: Boolean = false) {
     val interaction = remember { MutableInteractionSource() }
-    Button(onClick, modifier.sizeIn(minWidth = 58.sdp, minHeight = height.coerceAtLeast(58).sdp).pressEffect(interaction), enabled = enabled,
+    Button(onClick, modifier.sizeIn(minWidth = 58.sdp, minHeight = height.coerceAtLeast(58).sdp).pressEffect(interaction), enabled = enabled && !busy,
         interactionSource = interaction, elevation = ButtonDefaults.buttonElevation(0.sdp, 0.sdp, 0.sdp, 0.sdp, 0.sdp),
         shape = RoundedCornerShape(AppCorners.button.sdp),
         border = if (secondary) BorderStroke(1.sdp, AppColors.borderStrong) else null,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (secondary) Color.Transparent else AppColors.primary,
-            contentColor = if (danger) AppColors.danger else if (secondary) AppColors.textPrimary else AppColors.onPrimary),
+            containerColor = if (danger && !secondary) AppColors.danger else if (secondary) Color.Transparent else AppColors.primary,
+            contentColor = if (danger && !secondary) Color.White else if (danger) AppColors.danger else if (secondary) AppColors.textPrimary else AppColors.onPrimary),
         contentPadding = PaddingValues(horizontal = 22.sdp, vertical = 12.sdp)) {
-        Label(label, 18, if (!enabled) AppColors.textSecondary else if (danger) AppColors.danger else if (secondary) AppColors.textPrimary else AppColors.onPrimary, bold = !secondary)
+        if (busy) CircularProgressIndicator(Modifier.size(24.sdp), color = if (secondary) AppColors.textPrimary else AppColors.onPrimary, strokeWidth = 3.sdp)
+        else Label(label, AppType.secondary, if (danger && !secondary) Color.White else if (!enabled) AppColors.textSecondary else if (danger) AppColors.danger else if (secondary) AppColors.textPrimary else AppColors.onPrimary, bold = !secondary)
     }
 }
 
@@ -86,7 +91,7 @@ fun Modifier.dashedBorder(color: Color): Modifier {
 fun Tag(value: String, color: Color = AppColors.textOnCard, dashed: Boolean = false) {
     Box(Modifier.then(if (dashed) Modifier.dashedBorder(color) else Modifier)
         .background(if (dashed) Color.Transparent else color.copy(alpha = .12f), RoundedCornerShape(AppCorners.chip.sdp))
-        .padding(horizontal = 12.sdp, vertical = 7.sdp)) { Label(value, 18, color, maxLines = 2) }
+        .padding(horizontal = 12.sdp, vertical = 7.sdp)) { Label(value, AppType.secondary, color, maxLines = 2) }
 }
 
 fun statusName(status: String) = when (status) {
@@ -127,10 +132,12 @@ fun GearChip(state: DrivingState) {
 fun Header(title: String, subtitle: String? = null, driving: DrivingState, back: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.sdp)) {
-        if (back != null) Action("뒤로", back, secondary = true)
+        if (back != null) IconButton(back, Modifier.size(64.sdp)) {
+            LineIcon("back", Modifier.size(36.sdp).then(Modifier.semantics { contentDescription = "뒤로" }), AppColors.textPrimary)
+        }
         Column(Modifier.weight(1f)) {
             Label(title, AppType.screenTitle, bold = true)
-            subtitle?.let { Label(it, 18, AppColors.textSecondary) }
+            subtitle?.let { Label(it, AppType.secondary, AppColors.textSecondary) }
         }
         GearChip(driving)
     }
@@ -139,7 +146,10 @@ fun Header(title: String, subtitle: String? = null, driving: DrivingState, back:
 // 누르는 동안만 크기를 줄여 눌렀다는 사실을 바로 알 수 있게 한다.
 fun Modifier.pressEffect(source: MutableInteractionSource): Modifier = composed {
     val pressed by source.collectIsPressedAsState()
-    graphicsLayer { scaleX = if (pressed) .95f else 1f; scaleY = if (pressed) .95f else 1f }
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    LaunchedEffect(pressed) { if (pressed) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress) }
+    val overlay = AppColors.textPrimary.copy(alpha = .1f)
+    graphicsLayer { scaleX = if (pressed) .95f else 1f; scaleY = if (pressed) .95f else 1f }.drawWithContent { drawContent(); if (pressed) drawRect(overlay) }
 }
 
 fun Modifier.pressClick(enabled: Boolean = true, onClick: () -> Unit): Modifier = composed {
@@ -157,8 +167,8 @@ fun Modifier.pressToggle(value: Boolean, enabled: Boolean = true, onChange: (Boo
 fun CheckRow(checked: Boolean, label: String, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 58.sdp).pressToggle(checked, enabled, onChange),
         verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(58.sdp), Alignment.Center) { Checkbox(checked, null, enabled = enabled) }
-        Label(label, 18, modifier = Modifier.weight(1f))
+        Box(Modifier.size(58.sdp), Alignment.Center) { Checkbox(checked, null, enabled = enabled, colors = CheckboxDefaults.colors(checkedColor = AppColors.resolved, checkmarkColor = Color.White)) }
+        Label(label, AppType.secondary, modifier = Modifier.weight(1f))
     }
 }
 
@@ -198,7 +208,7 @@ private fun Navigation(page: String, onPage: (String) -> Unit, portrait: Boolean
             .pressClick { onPage(key) }, horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
             LineIcon(key, Modifier.size(26.sdp), color)
-            Label(title, 18, color, bold = selected)
+            Label(title, AppType.secondary, color, bold = selected)
         }
     }
     if (portrait) Row(Modifier.fillMaxSize().background(AppColors.rail).padding(10.sdp),
@@ -206,9 +216,6 @@ private fun Navigation(page: String, onPage: (String) -> Unit, portrait: Boolean
         entries.forEach { (key, title) -> item(key, title, Modifier.weight(1f).fillMaxHeight()) }
     } else Column(Modifier.fillMaxSize().background(AppColors.rail).padding(vertical = 24.sdp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.sdp)) {
-        Box(Modifier.size(48.sdp).background(AppColors.primary, RoundedCornerShape(14.sdp)), Alignment.Center) {
-            LineIcon("mic", Modifier.size(28.sdp), AppColors.onPrimary)
-        }
         entries.forEach { (key, title) -> item(key, title, Modifier.size(80.sdp, 68.sdp)) }
     }
 }
@@ -217,27 +224,28 @@ private fun Navigation(page: String, onPage: (String) -> Unit, portrait: Boolean
 fun LineIcon(kind: String, modifier: Modifier = Modifier, color: Color = AppColors.primaryText) {
     Canvas(modifier) {
         val u = size.width / 48f
-        fun line(x: Float, y: Float, xx: Float, yy: Float) = drawLine(color, Offset(x * u, y * u), Offset(xx * u, yy * u), 3.2f * u,
+        fun line(x: Float, y: Float, xx: Float, yy: Float) = drawLine(color, Offset(x * u, y * u), Offset(xx * u, yy * u), 3.6f * u,
             cap = androidx.compose.ui.graphics.StrokeCap.Round)
         when (kind) {
+            "back" -> { line(30f, 8f, 14f, 24f); line(14f, 24f, 30f, 40f) }
             "mic" -> {
-                drawRoundRect(color, Offset(18 * u, 7 * u), Size(12 * u, 21 * u), CornerRadius(6 * u), style = Stroke(3.4f * u))
+                drawRoundRect(color, Offset(18 * u, 7 * u), Size(12 * u, 21 * u), CornerRadius(6 * u), style = Stroke(3.6f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                 val path = Path().apply { moveTo(11 * u, 23 * u); cubicTo(11 * u, 40 * u, 37 * u, 40 * u, 37 * u, 23 * u) }
-                drawPath(path, color, style = Stroke(3.4f * u)); line(24f, 36f, 24f, 42f)
+                drawPath(path, color, style = Stroke(3.6f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)); line(24f, 36f, 24f, 42f)
             }
             "list" -> listOf(13f, 24f, 35f).forEach { y -> line(18f, y, 40f, y); drawCircle(color, 1.6f * u, Offset(9 * u, y * u)) }
             "report" -> {
                 val path = Path().apply { moveTo(12 * u, 6 * u); lineTo(29 * u, 6 * u); lineTo(37 * u, 14 * u); lineTo(37 * u, 42 * u); lineTo(12 * u, 42 * u); close() }
-                drawPath(path, color, style = Stroke(3.2f * u)); line(19f, 23f, 30f, 23f); line(19f, 31f, 30f, 31f)
+                drawPath(path, color, style = Stroke(3.6f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)); line(19f, 23f, 30f, 23f); line(19f, 31f, 30f, 31f)
             }
             else -> {
-                drawCircle(color, 6.5f * u, center, style = Stroke(3.2f * u))
+                drawCircle(color, 6.5f * u, center, style = Stroke(3.6f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                 listOf(0f, 45f, 90f, 135f).forEach { degrees ->
                     val radians = Math.toRadians(degrees.toDouble())
                     val dx = kotlin.math.cos(radians).toFloat(); val dy = kotlin.math.sin(radians).toFloat()
                     listOf(-1, 1).forEach { direction ->
                         drawLine(color, center + Offset(dx * 13 * u * direction, dy * 13 * u * direction),
-                            center + Offset(dx * 19 * u * direction, dy * 19 * u * direction), 3.2f * u,
+                            center + Offset(dx * 19 * u * direction, dy * 19 * u * direction), 3.6f * u,
                             cap = androidx.compose.ui.graphics.StrokeCap.Round)
                     }
                 }

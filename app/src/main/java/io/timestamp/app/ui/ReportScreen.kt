@@ -45,14 +45,7 @@ fun ReportScreen(groups: List<SymptomGroup>, group: SymptomGroup?, driving: Driv
         }
         @Composable fun actions() {
             Action("정비소에 보여주기", shop, Modifier.fillMaxWidth())
-            if (portrait) Row(horizontalArrangement = Arrangement.spacedBy(12.sdp)) {
-                Action("수리 완료", repair, Modifier.weight(1f), secondary = true, enabled = !busy)
-                Action("시운전 알림", toggleReminder, Modifier.weight(1f), secondary = true, enabled = !busy)
-            } else {
-                Action("수리 완료", repair, Modifier.fillMaxWidth(), secondary = true, enabled = !busy)
-                Action("시운전 알림", toggleReminder, Modifier.fillMaxWidth(), secondary = true, enabled = !busy)
-            }
-            Label("시운전 알림 ${if (reminder) "켜짐" else "꺼짐"}. 알림 기능은 준비 중이며 선택만 저장돼요.", 14, AppColors.textSecondary)
+            Action("수리 완료", repair, Modifier.fillMaxWidth(), secondary = true, enabled = !busy, busy = busy)
         }
         if (portrait) {
             ConditionCard(group, Modifier.fillMaxWidth())
@@ -83,14 +76,14 @@ fun GroupSummary(group: SymptomGroup, modifier: Modifier = Modifier) {
                 .height((if (portrait) 120 else 198).sdp), compact = true)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.sdp)) {
                 Label(group.part, 22, bold = true)
-                Label("${group.count}건 모두 같은 부위", 18, AppColors.textSecondary)
+                Label("${group.count}건 모두 같은 부위", AppType.secondary, AppColors.textSecondary)
                 if (group.records.all { it.capture.status == "REPAIRED" }) StatusTag("REPAIRED")
             }
         }
         val memos = driverMemos(group)
         if (memos.isNotEmpty()) {
             androidx.compose.material3.HorizontalDivider(color = AppColors.border)
-            Label("운전자 메모", 18, AppColors.textSecondary)
+            Label("운전자 메모", AppType.secondary, AppColors.textSecondary)
             memos.forEach { DriverMemoText(it, Modifier.fillMaxWidth()) }
         }
     }

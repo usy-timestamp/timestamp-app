@@ -14,7 +14,11 @@ import java.util.Locale
 
 class VoiceTrigger(private val context: Context, private val onUtterance: (String) -> Unit,
                    private val onListeningStarted: (Long) -> Unit = {},
-                   private val onSpeechStarted: (Long) -> Unit = {}) {
+                   private val onSpeechStarted: (Long) -> Unit = {},
+                   private val onPermanentError: () -> Unit = {}) {
+    private var listener: ResultListener? = null
+    private val backoff = SpeechErrorBackoff()
+    private var disabled = false
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var engine: SpeechToText? = null
     private var ready = false
@@ -37,12 +41,11 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
         // 결과가 영영 오지 않을 때만 복구하고 정상적인 늦은 결과는 기다린다.
         if (recognition.awaitingResult) {
             Log.w(TAG, "STT 최종 결과 대기 시간 초과")
-            releaseEngine(clearFiles = false)
-            connect()
+            recoverFromError()
         }
     }
 
-    fun start() { wanted = true; connect() }
+    fun start() { if (disabled) return; wanted = true; connect() }
 
     private fun connect() {
         if (!wanted || paused || engine != null) return
@@ -51,7 +54,7 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
             engine = s
             var lastEpdOn: Long? = null
             var readySignaled = false
-            s.addListener(object : ResultListener {
+            val resultListener = object : ResultListener {
                 override fun onUpdated(text: String, isFinal: Boolean) {
                     val now = SystemClock.elapsedRealtime()
                     main.post {
@@ -65,7 +68,8 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
                         main.removeCallbacks(reconnectAfterError)
                         recoveryScheduled = false
                         try {
-                            Log.i(TAG, "STT 최종 결과: $text")
+                            backoff.reset()
+                            if (io.timestamp.app.BuildConfig.DEBUG) Log.i(TAG, "STT 최종 결과: $text")
                             onUtterance(text)
                         } finally { resumeAfterResult(s) }
                     }
@@ -74,7 +78,7 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
                     main.post {
                         if (engine === s && !paused) {
                             Log.w(TAG, "STT 오류 $error")
-                            recoverFromError()
+                            recoverFromError(error.toString())
                         }
                     }
                 }
@@ -103,7 +107,9 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
                     }
                 }
                 override fun onUpdatedRms(rms: Double) = Unit
-            })
+            }
+            listener = resultListener
+            s.addListener(resultListener)
             s.initialize(object : OnInitializeListener {
                 override fun onSuccess() {
                     main.post {
@@ -116,27 +122,33 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
                                 // 초기화 성공보다 먼저 온 준비 알림도 듣기를 요청한 뒤 반영한다.
                                 if (readySignaled) onListeningStarted(SystemClock.elapsedRealtime())
                             }
-                        } catch (e: Exception) { Log.w(TAG, "STT 설정 실패", e) }
+                        } catch (e: Exception) { Log.w(TAG, "STT 설정 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null); recoverFromError() }
                     }
                 }
                 override fun onFailure(error: ErrorType) {
                     main.post {
                         if (engine === s && !paused) {
                             Log.w(TAG, "STT 초기화 실패 $error")
-                            recoverFromError()
+                            recoverFromError(error.toString())
                         }
                     }
                 }
             })
-        } catch (e: Exception) { Log.w(TAG, "STT 준비 실패", e) }
+        } catch (e: Exception) { Log.w(TAG, "STT 준비 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null); recoverFromError() }
     }
 
-    private fun recoverFromError() {
+    private fun recoverFromError(name: String = "MIC_ERROR") {
+        if (permanentSpeechError(name)) {
+            disabled = true
+            stop()
+            onPermanentError()
+            return
+        }
         main.removeCallbacks(requestAgain)
         // 파일의 늦은 최종 결과는 잠시 기다리되 오류가 반복돼도 복구 시각은 미루지 않는다.
         if (wanted && !paused && !recoveryScheduled) {
             recoveryScheduled = true
-            main.postDelayed(reconnectAfterError, if (fileSession) 6_000L else 1_000L)
+            main.postDelayed(reconnectAfterError, backoff.nextDelayMs())
         }
     }
 
@@ -166,8 +178,8 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
         main.removeCallbacks(reconnectAfterError)
         recoveryScheduled = false
         try { engine?.request() } catch (e: Exception) {
-            Log.w(TAG, "STT 듣기 실패", e)
-            restartAfterPause()
+            Log.w(TAG, "STT 듣기 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null)
+            recoverFromError()
         }
     }
 
@@ -218,12 +230,12 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
                         // 전송이 끝나도 최종 결과 전에는 듣기를 다시 시작하지 않는다.
                         recognition.fileSent()
                         waitForResult()
-                        try { s.completeAudioSend() } catch (e: Exception) { Log.w(TAG, "시험 음성 마감 실패", e) }
+                        try { s.completeAudioSend() } catch (e: Exception) { Log.w(TAG, "시험 음성 마감 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null) }
                     }
                 }
             } catch (_: InterruptedException) {
                 Thread.currentThread().interrupt()
-            } catch (e: Exception) { Log.w(TAG, "시험 음성 전송 실패", e) }
+            } catch (e: Exception) { Log.w(TAG, "시험 음성 전송 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null) }
         }.also { it.start() }
     }
 
@@ -239,6 +251,8 @@ class VoiceTrigger(private val context: Context, private val onUtterance: (Strin
         fileSession = false
         recoveryScheduled = false
         try { s?.stop() } catch (_: Exception) { }
+        try { listener?.let { s?.removeListener(it) } } catch (_: Exception) { }
+        listener = null
         try { s?.release() } catch (_: Exception) { }
     }
 

@@ -1,0 +1,26 @@
+{
+  "packageName": "io.timestamp.app",
+  "appDescription": "Record vehicle conditions when an unusual sound or sensation occurs. Review saved moments and repair reports while parked.",
+  "invokeWord": "타임 스탬프",
+  "version": "1.1.0",
+  "actionCalls": [
+    {
+      "type": "function",
+      "function": {
+        "name": "RECORD_VEHICLE_MOMENT",
+        "description": "Record the current vehicle state and the driver description of an unusual sound or sensation.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "symptom": {
+              "type": "string",
+              "description": "The symptom described by the driver."
+            }
+          },
+          "required": []
+        },
+        "component": "service"
+      }
+    }
+  ]
+}

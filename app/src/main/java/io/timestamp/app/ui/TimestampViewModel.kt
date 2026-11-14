@@ -46,6 +46,10 @@ class TimestampViewModel(application: Application) : AndroidViewModel(applicatio
         done()
     }
 
+    fun setVoiceEnabled(enabled: Boolean) = mutate {
+        repository.saveSettings(repository.settings().copy(voiceTriggerEnabled = enabled))
+    }
+
     fun setMemoInputMode(mode: io.timestamp.app.data.MemoInputMode) = mutate {
         repository.saveSettings(repository.settings().copy(memoInputMode = mode.name))
     }

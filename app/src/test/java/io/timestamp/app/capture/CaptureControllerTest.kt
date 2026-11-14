@@ -251,4 +251,23 @@ class CaptureControllerTest {
         assertEquals(false, samples.single { it.offsetSec == 0 }.brakePressed)
         controller.stop()
     }
+    @Test fun gleoColdCaptureSavesSymptomAfterFiveSeconds() = runTest {
+        val f = Fixture(this)
+        f.controller.start()
+        runCurrent()
+        var completed = false
+        assertTrue(f.controller.trigger(TriggerKind.GLEO, "끼익 소리") { completed = true })
+        advanceTimeBy(4999)
+        runCurrent()
+        assertFalse(completed)
+        assertEquals(0, f.repository.count())
+        advanceTimeBy(1)
+        runCurrent()
+        assertTrue(completed)
+        val record = f.repository.recent().single()
+        assertEquals(TriggerKind.GLEO, record.capture.trigger)
+        assertEquals("끼익 소리", record.capture.memo)
+        assertTrue(record.samples.filter { it.offsetSec < 0 }.all { it.speedKmh == null })
+        f.controller.stop()
+    }
 }

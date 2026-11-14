@@ -51,6 +51,12 @@ class CaptureService : Service() {
     private lateinit var controller: CaptureController
     private lateinit var speaker: Speaker
     private lateinit var voice: VoiceTrigger
+    private val gearWatcher by lazy { io.timestamp.app.vehicle.GearWatcher(this, gearOnly = true) }
+    private var parkedSince: Long? = null
+    private var idleTimer: Job? = null
+    private var idle = false
+    private var gleoRequests = 0
+    private var speechDisabled = false
     private var receiverRegistered = false
     private var microphoneForeground = false
     private var settingsLoaded = false
@@ -64,7 +70,10 @@ class CaptureService : Service() {
         super.onCreate()
         showForeground(false)
         repository = RoomCaptureRepository(AppDatabase.get(this).captureDao())
-        voice = VoiceTrigger(this, ::onVoiceUtterance, ::onListeningStarted, ::onSpeechStarted)
+        voice = VoiceTrigger(this, ::onVoiceUtterance, ::onListeningStarted, ::onSpeechStarted) {
+            speechDisabled = true
+            applyVoiceSetting()
+        }
         speaker = Speaker(this) { speaking ->
             if (!destroyed) voice.setPaused(speaking)
         }.also { it.start() }
@@ -74,12 +83,24 @@ class CaptureService : Service() {
             onSaved = { record ->
                 logRecord(record)
                 withContext(Dispatchers.Main.immediate) {
-                    if (record.capture.trigger != TriggerKind.VOICE && settings.announceCapture) speaker.speak("기록했어요")
+                    if (record.capture.trigger !in setOf(TriggerKind.VOICE, TriggerKind.GLEO) && settings.announceCapture) speaker.speak("기록했어요")
                 }
             },
-            onError = { Log.e(TAG, "기록 처리 실패", it) },
+            onError = { Log.e(TAG, "기록 처리 실패", if (BuildConfig.DEBUG) it else null) },
         )
-        controller.start()
+        serviceScope.launch {
+            gearWatcher.state.collect { state ->
+                idleTimer?.cancel()
+                if (state.gear == "P") {
+                    if (parkedSince == null) parkedSince = SystemClock.elapsedRealtime()
+                    idleTimer = serviceScope.launch {
+                        delay((PARK_IDLE_MS - (SystemClock.elapsedRealtime() - parkedSince!!)).coerceAtLeast(0))
+                        applyVoiceSetting()
+                    }
+                } else parkedSince = null
+                applyVoiceSetting()
+            }
+        }
         if (BuildConfig.DEBUG) {
             ContextCompat.registerReceiver(this, debugReceiver, IntentFilter().apply {
                 addAction(ACTION_CAPTURE)
@@ -104,27 +125,53 @@ class CaptureService : Service() {
                 }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) { Log.e(TAG, "설정 읽기 실패", e) }
+            } catch (e: Exception) { Log.e(TAG, "설정 읽기 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null) }
         }
     }
 
     private fun applyVoiceSetting() {
         if (!settingsLoaded) return
-        val enabled = settings.voiceTriggerEnabled && granted(Manifest.permission.RECORD_AUDIO)
-        if (enabled) {
+        if (gleoRequests > 0) return
+        if (!settings.onboardingCompleted || settings.consentAtMs == null) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
+        val activity = captureActivity(settings.voiceTriggerEnabled && !speechDisabled,
+            granted(Manifest.permission.RECORD_AUDIO), parkedSince, SystemClock.elapsedRealtime())
+        if (activity == CaptureActivity.PARKED_IDLE) {
+            if (!idle) {
+                idle = true
+                voice.stop()
+                speaker.stop()
+                memoFlow.cancel()
+                memoTimeout?.cancel()
+                controller.stop()
+            }
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            microphoneForeground = false
+            return
+        }
+        if (activity == CaptureActivity.ACTIVE) {
+            idle = false
+            gearWatcher.start()
+            controller.start()
             try {
                 showForeground(true)
                 voice.start()
             } catch (e: Exception) {
-                Log.w(TAG, "음성 듣기 시작 실패", e)
+                Log.w(TAG, "음성 듣기 시작 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null)
                 voice.stop()
-                showForeground(false)
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
             }
         } else {
             memoFlow.cancel()
             memoTimeout?.cancel()
             voice.stop()
-            if (microphoneForeground) showForeground(false)
+            speaker.stop()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
         }
     }
 
@@ -189,7 +236,7 @@ class CaptureService : Service() {
                         }
                     } catch (e: CancellationException) {
                         throw e
-                    } catch (e: Exception) { Log.e(TAG, "메모 입력 설정 읽기 실패", e) }
+                    } catch (e: Exception) { Log.e(TAG, "메모 입력 설정 읽기 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null) }
                 }
             }
             is MemoDecision.SaveMemo -> {
@@ -204,12 +251,12 @@ class CaptureService : Service() {
             // 기다리는 동안 기록을 지웠다면 되살리지 않고 그대로 끝낸다.
             if (repository.updateMemo(decision.captureId, decision.memo)) {
                 if (decision.late) Log.i(TAG, "늦게 온 답 받음")
-                Log.i(TAG, if (decision.continuation) "이어진 말을 메모로 저장: ${decision.memo}" else "메모 저장: ${decision.memo}")
+                if (BuildConfig.DEBUG) Log.i(TAG, if (decision.continuation) "이어진 말을 메모로 저장: ${decision.memo}" else "메모 저장: ${decision.memo}")
                 if (!decision.continuation) speaker.speak("메모했어요")
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) { Log.e(TAG, "메모 저장 실패", e) }
+        } catch (e: Exception) { Log.e(TAG, "메모 저장 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null) }
     }
 
     private fun onVoiceRecordSaved(record: CaptureRecord, plan: MemoCapturePlan) {
@@ -269,7 +316,7 @@ class CaptureService : Service() {
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            Log.e(TAG, "예시 기록 저장 실패", e)
+                            Log.e(TAG, "예시 기록 저장 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null)
                         } finally { pending.finish() }
                     }
                 }
@@ -284,7 +331,7 @@ class CaptureService : Service() {
                         val bytes = assets.open("stt-test/$name").use { it.readBytes() }
                         voice.feedForTest(bytes.copyOfRange(44, bytes.size))
                         Log.i(TAG, "시험 음성 전송 $name")
-                    } catch (e: Exception) { Log.w(TAG, "시험 음성 열기 실패", e) }
+                    } catch (e: Exception) { Log.w(TAG, "시험 음성 열기 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null) }
                 }
                 ACTION_DUMP -> {
                     val pending = goAsync()
@@ -295,7 +342,7 @@ class CaptureService : Service() {
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            Log.e(TAG, "기록 조회 실패", e)
+                            Log.e(TAG, "기록 조회 실패", if (io.timestamp.app.BuildConfig.DEBUG) e else null)
                         } finally { pending.finish() }
                     }
                 }
@@ -304,6 +351,7 @@ class CaptureService : Service() {
     }
 
     private fun logRecord(record: CaptureRecord) {
+        if (!BuildConfig.DEBUG) return
         val before = record.samples.filter { it.offsetSec in -5..-1 }
         val speeds = before.mapNotNull { it.speedKmh }
         val speedRange = if (speeds.isEmpty()) "수집 불가" else "${speeds.minOrNull()}..${speeds.maxOrNull()} km/h"
@@ -315,7 +363,57 @@ class CaptureService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) stopSelf() else applyVoiceSetting()
+        if (!microphoneForeground) showForeground(false)
+        if (intent?.action == io.timestamp.app.gleo.RECORD_VEHICLE_MOMENT) {
+            @Suppress("DEPRECATION")
+            val callback = intent.getParcelableExtra<android.os.ResultReceiver>("callback")
+            val symptom = intent.getStringExtra("symptom")
+            gleoRequests++
+            serviceScope.launch {
+                var answered = false
+                fun reply(status: String, message: String, mode: String = "voice", id: String? = null) {
+                    if (answered) return
+                    answered = true
+                    callback?.send(0, android.os.Bundle().apply {
+                        putString("response", io.timestamp.app.gleo.gleoResponse(status, message, mode, id))
+                    })
+                    gleoRequests--
+                    applyVoiceSetting()
+                }
+                try {
+                    val current = repository.settings()
+                    if (!current.onboardingCompleted || current.consentAtMs == null) {
+                        reply("fail", "Please open the app and complete the privacy consent first.")
+                        return@launch
+                    }
+                    if (parkedSince != null) {
+                        parkedSince = SystemClock.elapsedRealtime()
+                        idleTimer?.cancel()
+                        idleTimer = serviceScope.launch { delay(PARK_IDLE_MS); applyVoiceSetting() }
+                    }
+                    idle = false
+                    gearWatcher.start()
+                    controller.start()
+                    val plan = MemoCapturePlan(symptom, symptom == null && current.memoInputMode == MemoInputMode.ASK_AFTER_RECORDING.name)
+                    val timeout = serviceScope.launch {
+                        delay(6100)
+                        reply("fail", "Recording could not be confirmed in time.")
+                    }
+                    val accepted = controller.trigger(TriggerKind.GLEO, symptom, onFailure = {
+                        serviceScope.launch { timeout.cancel(); reply("fail", "The vehicle state could not be saved.") }
+                    }) { record ->
+                        withContext(Dispatchers.Main.immediate) {
+                            timeout.cancel()
+                            if (answered) return@withContext
+                            val ask = plan.askAfterSaving && settings.voiceTriggerEnabled && !speechDisabled && granted(Manifest.permission.RECORD_AUDIO)
+                            reply("success", "The vehicle state was recorded.", if (ask) "silent" else "voice", record.capture.id)
+                            if (ask) onVoiceRecordSaved(record, plan)
+                        }
+                    }
+                    if (!accepted) { timeout.cancel(); reply("fail", "A recording is already in progress. Please try again shortly.") }
+                } catch (_: Exception) { reply("fail", "The vehicle state could not be recorded.") }
+            }
+        } else if (intent?.action == ACTION_STOP) stopSelf() else applyVoiceSetting()
         return START_NOT_STICKY
     }
 
@@ -323,6 +421,8 @@ class CaptureService : Service() {
 
     override fun onDestroy() {
         destroyed = true
+        idleTimer?.cancel()
+        gearWatcher.stop()
         memoFlow.cancel()
         memoTimeout?.cancel()
         if (receiverRegistered) unregisterReceiver(debugReceiver)

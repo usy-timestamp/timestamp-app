@@ -10,9 +10,9 @@ object VehicleConnection {
     }
 }
 
-// 화면과 기록 서비스가 같은 연결을 빌리므로 창을 닫아도 기록은 계속된다.
-class GearWatcher(context: Context) {
-    private val source = VehicleConnection.get(context)
+// 기어만 보는 감시는 샘플링을 멈춘 뒤에도 유지할 수 있다.
+class GearWatcher(context: Context, gearOnly: Boolean = false) {
+    private val source = if (gearOnly) AaosPropertySource(context, gearOnly = true) else VehicleConnection.get(context)
     private var started = false
     val state = source.drivingState
 

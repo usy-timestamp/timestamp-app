@@ -24,11 +24,11 @@ fun OnboardingScreen(permissions: PermissionState, consent: Boolean, agree: (Boo
         }
         Label("이상한 소리가 나면\n말 한마디로 그 순간을 남겨요", 36, bold = true)
         Panel(Modifier.fillMaxWidth()) {
-            Label("운전 중에 이렇게 말하세요", 18, AppColors.textSecondary)
+            Label("운전 중에 이렇게 말하세요", AppType.secondary, AppColors.textSecondary)
             Label("“타임 스탬프 찍어줘”", 30, AppColors.primaryText, true)
-            Label("스탬프, 타임 스탬프라고만 말해도 돼요", 18)
-            Label("기록한 뒤 어떤 소리였는지 한 번 물어봐요. 설정에서 바꿀 수 있어요.", 18)
-            Label("말하기 전후 30초의 속도, 브레이크, 기어가 저장돼요. 소리는 말하기 몇 초 전에 났으니 앞부분까지 남깁니다.", 18, AppColors.textSecondary)
+            Label("스탬프, 타임 스탬프라고만 말해도 돼요", AppType.secondary)
+            Label("기록한 뒤 어떤 소리였는지 한 번 물어봐요. 설정에서 바꿀 수 있어요.", AppType.secondary)
+            Label("말하기 전후 30초의 속도, 브레이크, 기어가 저장돼요. 소리는 말하기 몇 초 전에 났으니 앞부분까지 남깁니다.", AppType.secondary, AppColors.textSecondary)
         }
     }
     @Composable fun permissionsAndConsent() {
@@ -37,9 +37,9 @@ fun OnboardingScreen(permissions: PermissionState, consent: Boolean, agree: (Boo
         PermissionCard("차량 속도와 기어", "그 순간 차 상태를 남기기 위해 (필수)", permissions.carSpeed && permissions.carPowertrain) { request("car") }
         PrivacyNotice()
         CheckRow(consent, "위 내용을 확인했고 동의합니다", !busy, agree)
-        if (!consent) Label("안내 내용을 확인하고 동의해야 시작할 수 있어요.", 18, AppColors.textSecondary)
+        if (!consent) Label("안내 내용을 확인하고 동의해야 시작할 수 있어요.", AppType.secondary, AppColors.textSecondary)
         Box(Modifier.fillMaxWidth()) {
-            Action("시작하기", start, Modifier.fillMaxWidth(), enabled = consent && !busy)
+            Action("시작하기", start, Modifier.fillMaxWidth(), busy = busy, enabled = consent && !busy)
             if (!consent && !busy) Box(Modifier.matchParentSize().pressClick { start() })
         }
     }
@@ -60,8 +60,8 @@ fun OnboardingScreen(permissions: PermissionState, consent: Boolean, agree: (Boo
 private fun PermissionCard(title: String, why: String, granted: Boolean, request: () -> Unit) {
     Panel(Modifier.fillMaxWidth(), padding = 18) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.sdp)) {
-            Column(Modifier.weight(1f)) { Label(title, 20, bold = true); Label(why, 18, AppColors.textSecondary) }
-            if (granted) Label("허용됨", 18, AppColors.resolved, true) else Action("허용", request)
+            Column(Modifier.weight(1f)) { Label(title, 20, bold = true); Label(why, AppType.secondary, AppColors.textSecondary) }
+            if (granted) Label("허용됨", AppType.secondary, AppColors.resolved, true) else Action("허용", request)
         }
     }
 }

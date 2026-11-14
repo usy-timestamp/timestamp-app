@@ -23,10 +23,11 @@ fun SignalGraph(samples: List<SampleEntity>, modifier: Modifier = Modifier) {
     Panel(modifier, padding = 22) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Label("말한 순간 앞뒤 30초", AppType.cardTitle, bold = true)
-            Label("속도   브레이크", 18, AppColors.textSecondary)
+            Label("속도   브레이크", AppType.secondary, AppColors.textSecondary)
         }
         // 가로 대 세로 비율을 고정한다. 높이가 정해지지 않으면 그래프가 납작해져 축이 뒤집혀 보인다
-        Canvas(Modifier.fillMaxWidth().aspectRatio(1.9f).padding(top = 16.sdp)
+        val colors = AppColors
+        Canvas(Modifier.fillMaxWidth().aspectRatio(1.7f).padding(top = 16.sdp)
             .semantics { contentDescription = "말하기 25초 전부터 5초 후까지의 속도와 브레이크 그래프. 라임 띠는 브레이크를 밟은 구간" }) {
             val left = 42.sdpValue(size.width)
             val right = size.width - 18.sdpValue(size.width)
@@ -40,17 +41,17 @@ fun SignalGraph(samples: List<SampleEntity>, modifier: Modifier = Modifier) {
             fun text(value: String, xx: Float, yy: Float, primary: Boolean = false, end: Boolean = false, center: Boolean = false, finding: Boolean = false) {
                 drawIntoCanvas { canvas ->
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = (if (finding) AppColors.findingText else if (primary) AppColors.primaryText else AppColors.textTertiary).toArgb()
+                        color = (if (finding) colors.findingText else if (primary) colors.primaryText else colors.textTertiary).toArgb()
                         textSize = axisTextSize.toPx()
                         textAlign = if (end) Paint.Align.RIGHT else if (center) Paint.Align.CENTER else Paint.Align.LEFT
                     }
                     canvas.nativeCanvas.drawText(value, xx, yy, paint)
                 }
             }
-            drawRect(AppColors.finding.copy(alpha = .08f), Offset(x(-5), top - 12), Size(x(0) - x(-5), bottom - top + 12))
-            text("블랙박스 확인 구간", (x(-5) + x(0)) / 2, top - 18, center = true, finding = true)
+            drawRect(colors.finding.copy(alpha = .08f), Offset(x(-5), top - 12), Size(x(0) - x(-5), bottom - top + 12))
+            text("확인 구간", (x(-5) + x(0)) / 2, top - 18, center = true, finding = true)
             listOf(0f, 30f, 60f).forEach { speed ->
-                drawLine(AppColors.borderStrong, Offset(left, y(speed)), Offset(right, y(speed)), 1f)
+                drawLine(colors.borderStrong, Offset(left, y(speed)), Offset(right, y(speed)), 1f)
                 text(speed.toInt().toString(), left - 8, y(speed) + 4, end = true)
             }
             val byOffset = samples.associateBy { it.offsetSec }
@@ -58,19 +59,19 @@ fun SignalGraph(samples: List<SampleEntity>, modifier: Modifier = Modifier) {
                 if (byOffset[offset]?.brakePressed == true) {
                     val start = max(left, x(offset) - unit / 2)
                     val end = minOf(right, x(offset) + unit / 2)
-                    drawRect(AppColors.finding.copy(alpha = .45f), Offset(start, bottom - (bottom - top) * .25f),
+                    drawRect(colors.finding.copy(alpha = .45f), Offset(start, bottom - (bottom - top) * .25f),
                         Size(end - start, (bottom - top) * .25f))
                 }
                 val speed = byOffset[offset]?.speedKmh?.takeIf(Float::isFinite)
                 val previous = byOffset[offset - 1]?.speedKmh?.takeIf(Float::isFinite)
                 if (speed != null) {
-                    drawCircle(AppColors.textPrimary, 1.5f, Offset(x(offset), y(speed)))
-                    if (previous != null) drawLine(AppColors.textPrimary, Offset(x(offset - 1), y(previous)), Offset(x(offset), y(speed)), 3f * size.width / 604)
+                    drawCircle(colors.textPrimary, 1.5f, Offset(x(offset), y(speed)))
+                    if (previous != null) drawLine(colors.textPrimary, Offset(x(offset - 1), y(previous)), Offset(x(offset), y(speed)), 3f * size.width / 604)
                 }
             }
-            drawLine(AppColors.primary, Offset(x(0), top - 12), Offset(x(0), bottom + 7), 2f * size.width / 604,
+            drawLine(colors.primaryText, Offset(x(0), top - 12), Offset(x(0), bottom + 7), 2f * size.width / 604,
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(7f, 7f)))
-            byOffset[0]?.speedKmh?.takeIf(Float::isFinite)?.let { drawCircle(AppColors.primary, 6f * size.width / 604, Offset(x(0), y(it))) }
+            byOffset[0]?.speedKmh?.takeIf(Float::isFinite)?.let { drawCircle(colors.primaryText, 6f * size.width / 604, Offset(x(0), y(it))) }
             listOf(-25 to "25초 전", -15 to "15초 전", -5 to "5초 전", 5 to "5초 후").forEach { (offset, label) ->
                 text(label, x(offset), bottom + 28.sdpValue(size.width), end = offset == 5, center = offset in -15..0)
             }

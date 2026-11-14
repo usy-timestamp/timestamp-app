@@ -13,6 +13,8 @@ class PleosSource(
     private val context: Context,
     private val clock: Clock = WallClock,
 ) : VehicleSignalSource {
+    private var retried = false
+    private var stopped = false
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var vehicle: Vehicle? = null
     @Volatile private var brakePressed: Boolean? = null
@@ -33,6 +35,7 @@ class PleosSource(
     }
 
     override fun start() {
+        stopped = false
         if (vehicle != null) return
         try {
             val v = Vehicle(context)
@@ -41,29 +44,50 @@ class PleosSource(
             // 차량 서비스가 연결되기 전에 구독하면 값을 받지 못하므로 기다린다.
             main.postDelayed({ if (vehicle === v) subscribe(v) }, 1500)
         } catch (_: Exception) {
-            stop()
+            retry()
         }
     }
 
     private fun subscribe(v: Vehicle) {
         try {
             val brake = v.getBrake()
-            brake.checkBrakePedalStatusCapabilities({}, {})
-            brake.getCurrentBrakePedalStatus(
-                { if (vehicle === v) brakePressed = it },
-                { if (vehicle === v) brakePressed = null },
-            )
-            brake.registerBrakePedalStatus(brakeListener)
-        } catch (_: Exception) { brakePressed = null }
-        try {
+            brake.checkBrakePedalStatusCapabilities({ config ->
+                if (vehicle === v && config.accessType.toString() in setOf("READ", "READ_WRITE")) {
+                    brake.getCurrentBrakePedalStatus(
+                        { if (vehicle === v) brakePressed = it },
+                        { if (vehicle === v) { brakePressed = null; retry() } },
+                    )
+                    brake.registerBrakePedalStatus(brakeListener)
+                }
+            }, { if (vehicle === v) retry() })
+        } catch (_: Exception) { brakePressed = null; retry() }
+        if (io.timestamp.app.BuildConfig.DEBUG) try {
             val safety = v.getSafety()
-            safety.checkTelltalesCapabilities({}, {})
-            safety.getTelltalesInfo(
-                { if (vehicle === v) updateTelltales(it) },
-                { if (vehicle === v) warningLights = emptyList() },
-            )
-            safety.registerTelltales(telltaleListener)
-        } catch (_: Exception) { warningLights = emptyList() }
+            safety.checkTelltalesCapabilities({ config ->
+                if (vehicle === v && config.accessType.toString() in setOf("READ", "READ_WRITE")) {
+                    safety.getTelltalesInfo(
+                        { if (vehicle === v) updateTelltales(it) },
+                        { if (vehicle === v) { warningLights = emptyList(); retry() } },
+                    )
+                    safety.registerTelltales(telltaleListener)
+                }
+            }, { if (vehicle === v) retry() })
+        } catch (_: Exception) { warningLights = emptyList(); retry() }
+    }
+
+    private fun retry() {
+        main.post {
+            if (stopped || retried) return@post
+            retried = true
+            main.postDelayed({
+                if (!stopped) {
+                    val old = vehicle
+                    vehicle = null
+                    try { old?.release() } catch (_: Exception) { }
+                    start()
+                }
+            }, 5000)
+        }
     }
 
     private fun updateTelltales(telltales: Telltales?) {
@@ -77,11 +101,13 @@ class PleosSource(
     )
 
     override fun stop() {
+        stopped = true
+        retried = false
         main.removeCallbacksAndMessages(null)
         val v = vehicle
         vehicle = null
         try { v?.getBrake()?.unregisterBrakePedalStatus(brakeListener) } catch (_: Exception) { }
-        try { v?.getSafety()?.unregisterTelltales(telltaleListener) } catch (_: Exception) { }
+        if (io.timestamp.app.BuildConfig.DEBUG) try { v?.getSafety()?.unregisterTelltales(telltaleListener) } catch (_: Exception) { }
         try { v?.release() } catch (_: Exception) { }
         brakePressed = null
         warningLights = emptyList()

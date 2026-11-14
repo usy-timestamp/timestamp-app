@@ -28,15 +28,17 @@ fun TimestampApp(model: TimestampViewModel, drivingFlow: StateFlow<DrivingState>
     val busy by model.busy.collectAsStateWithLifecycle()
     val error by model.error.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var page by rememberSaveable { mutableStateOf("list") }
-    var recordId by rememberSaveable { mutableStateOf("") }
+    val navigation = remember { context.getSharedPreferences("navigation", android.content.Context.MODE_PRIVATE) }
+    val restore = remember { System.currentTimeMillis() - navigation.getLong("savedAt", 0) in 0..21_600_000L }
+    var page by remember { mutableStateOf(if (restore) navigation.getString("page", "list") ?: "list" else "list") }
+    var recordId by remember { mutableStateOf(if (restore) navigation.getString("recordId", "") ?: "" else "") }
     var groupPart by rememberSaveable { mutableStateOf("") }
     var showRepair by rememberSaveable { mutableStateOf(false) }
     var consent by rememberSaveable { mutableStateOf(false) }
     var recordsVersion by rememberSaveable { mutableIntStateOf(0) }
     val screens = key(recordsVersion) { rememberSaveableStateHolder() }
     val group = state.groups.firstOrNull { it.part == groupPart } ?: state.groups.firstOrNull()
-    val ready = state.settings?.onboardingCompleted == true && state.settings?.consentAtMs != null && permissions.requiredGranted
+    val ready = state.settings?.onboardingCompleted == true && state.settings?.consentAtMs != null
     val today by produceState(LocalDate.now()) {
         while (true) { delay(30_000); value = LocalDate.now() }
     }
@@ -46,10 +48,23 @@ fun TimestampApp(model: TimestampViewModel, drivingFlow: StateFlow<DrivingState>
     fun message(value: String) { Toast.makeText(context, value, Toast.LENGTH_LONG).show() }
 
     LaunchedEffect(error) { error?.let { message(it); model.error.value = null } }
-    LaunchedEffect(ready, resumed) { if (ready && resumed) startCapture() }
+    LaunchedEffect(ready, resumed, state.settings?.voiceTriggerEnabled) {
+        if (ready && resumed && state.settings?.voiceTriggerEnabled == true) startCapture()
+    }
+    LaunchedEffect(page, recordId, resumed, driving.showDrivingScreen) {
+        navigation.edit().putString("page", page).putString("recordId", recordId)
+            .putLong("savedAt", System.currentTimeMillis()).apply()
+    }
+    DisposableEffect(navigation) {
+        onDispose {
+            navigation.edit().putString("page", page).putString("recordId", recordId)
+                .putLong("savedAt", System.currentTimeMillis()).apply()
+        }
+    }
     LaunchedEffect(driving.showDrivingScreen) { if (driving.showDrivingScreen) showRepair = false }
     BackHandler(enabled = driving.showDrivingScreen || page != "list") {
-        if (!driving.showDrivingScreen) page = if (page == "shop") "report" else "list"
+        if (driving.showDrivingScreen) (context as? android.app.Activity)?.finishAndRemoveTask()
+        else page = if (page == "shop") "report" else "list"
     }
     TimestampTheme {
         WindowScale(Modifier.fillMaxSize().background(AppColors.background)) {
@@ -73,7 +88,7 @@ fun TimestampApp(model: TimestampViewModel, drivingFlow: StateFlow<DrivingState>
                 }) {
                     screens.SaveableStateProvider(if (page == "detail") "detail:$recordId" else page) {
                     when (page) {
-                        "settings" -> SettingsScreen(driving, busy, state.settings!!.memoInputMode, model::setMemoInputMode) {
+                        "settings" -> SettingsScreen(driving, busy, state.settings!!.memoInputMode, model::setMemoInputMode, state.settings!!.voiceTriggerEnabled, model::setVoiceEnabled) {
                             model.deleteAll {
                                 // 지운 기록의 부위나 수리 메모가 저장된 화면 상태에도 남지 않게 한다.
                                 recordsVersion++

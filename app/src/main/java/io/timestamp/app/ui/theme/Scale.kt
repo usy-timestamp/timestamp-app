@@ -15,7 +15,7 @@ private val LocalScale = staticCompositionLocalOf { 1f }
 fun WindowScale(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     BoxWithConstraints(modifier) {
         val portrait = maxWidth < maxHeight
-        CompositionLocalProvider(LocalScale provides (maxWidth.value / if (portrait) 640f else 1280f),
+        CompositionLocalProvider(LocalScale provides (if (portrait) minOf(maxWidth.value / 640f, maxHeight.value / 1100f) else minOf(maxWidth.value / 1274f, maxHeight.value / 855f)),
             LocalPortrait provides portrait) { content() }
     }
 }

@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        gearWatcher = GearWatcher(this)
+        gearWatcher = GearWatcher(this, gearOnly = true)
         refreshPermissions()
         // 주행을 시작하면 화면을 스스로 내려 내비나 다른 앱을 가리지 않는다. 기록은 서비스가 계속 받는다.
         // 달리는 중에 운전자가 직접 앱을 열었을 때는 내리지 않고 안내 화면을 보여 준다.
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
     // 차량 화면에서는 창을 뒤로 보내는 요청이 통하지 않아 창을 닫는다. 그러면 내비 같은 앞서 보던 화면이 나온다.
     private fun leaveScreen() {
-        android.util.Log.i("TimeStampCapture", "주행 시작, 화면을 내림")
+        if (BuildConfig.DEBUG) android.util.Log.i("TimeStampCapture", "주행 시작, 화면을 내림")
         finishAndRemoveTask()
     }
 

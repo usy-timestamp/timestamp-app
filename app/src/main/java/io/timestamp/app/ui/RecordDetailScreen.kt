@@ -40,15 +40,15 @@ fun RecordDetailScreen(record: CaptureRecord, driving: DrivingState, back: () ->
     }
     @Composable fun actions() {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.sdp)) {
-            Action("이 기록 지우기", { confirmDelete = true }, Modifier.weight(1f), secondary = true, enabled = !busy, danger = true)
-            Action("부위 저장", { save(selected) }, Modifier.weight(1f), enabled = !busy)
+            Action("이 기록 지우기", { confirmDelete = true }, Modifier.weight(1f), secondary = true, busy = busy, enabled = !busy, danger = true)
+            Action("부위 저장", { save(selected) }, Modifier.weight(1f), busy = busy, enabled = !busy)
         }
     }
     Column(Modifier.fillMaxSize().then(if (portrait) Modifier.verticalScroll(rememberScrollState()) else Modifier),
         verticalArrangement = Arrangement.spacedBy(20.sdp)) {
         Header("${dateTimeText(record.capture.createdAtMs)} 기록", driving = driving, back = back)
         Row(horizontalArrangement = Arrangement.spacedBy(12.sdp)) {
-            Label("운전자 메모", 18, AppColors.textSecondary)
+            Label("운전자 메모", AppType.secondary, AppColors.textSecondary)
             DriverMemoText(record.capture.memo, Modifier.weight(1f))
         }
         if (portrait) {
@@ -77,8 +77,8 @@ fun ValueCell(title: String, value: String?, modifier: Modifier = Modifier) {
     val shape = androidx.compose.foundation.shape.RoundedCornerShape(13.sdp)
     androidx.compose.material3.Surface(modifier, color = AppColors.surfaceRaised, shape = shape) {
         Column(Modifier.padding(horizontal = 14.sdp, vertical = 16.sdp), verticalArrangement = Arrangement.spacedBy(4.sdp)) {
-            Label(title, 14, AppColors.textSecondary)
-            Label(value ?: "수집 불가", 18, if (value == null) AppColors.textSecondary else AppColors.textPrimary, value != null)
+            Label(title, AppType.caption, AppColors.textSecondary)
+            Label(value ?: "수집 불가", AppType.secondary, if (value == null) AppColors.textSecondary else AppColors.textPrimary, value != null)
         }
     }
 }
@@ -87,13 +87,13 @@ fun ValueCell(title: String, value: String?, modifier: Modifier = Modifier) {
 fun ConfirmDialog(title: String, message: String, confirm: String, dismiss: () -> Unit, accept: () -> Unit, busy: Boolean) {
     androidx.compose.ui.window.Dialog({ if (!busy) dismiss() },
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
-        Panel(Modifier.widthIn(max = 560.sdp).fillMaxWidth(.94f)) {
+        Panel(Modifier.widthIn(max = 760.sdp).fillMaxWidth(.94f), popup = true) {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
-                Label(title, 28, bold = true)
-                Label(message, 18, AppColors.textSecondary)
+                Label(title, 32, bold = true, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Label(message, AppType.body, AppColors.textSecondary, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.sdp)) {
-                    Action("취소", dismiss, Modifier.weight(1f), secondary = true, enabled = !busy)
-                    Action(confirm, accept, Modifier.weight(1f), secondary = true, enabled = !busy, danger = true)
+                    Action(confirm, accept, Modifier.weight(1f), busy = busy, enabled = !busy, danger = true)
+                    Action("취소", dismiss, Modifier.weight(1f), secondary = true, busy = busy, enabled = !busy)
                 }
             }
         }

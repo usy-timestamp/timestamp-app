@@ -58,3 +58,17 @@
 - 숫자는 에뮬레이터에 넣은 값에서 나온다. 실제 차에서 잰 값이 아니므로 발표와 영상에서 "에뮬레이터 시연 시나리오"라고 밝힌다
 - 메모 방식을 "한 번에 말하기"로 바꾸려면 설정 메뉴에서 고른다
 - 에뮬레이터 음성 인식이 가끔 오류를 낸다. 명령이 안 먹으면 몇 초 뒤 다시 말한다
+
+## Gleo 브로드캐스트 시험
+
+최초 실행에서 개인정보 동의를 완료한다. Gleo 설치 여부와 관계없이 앱 수신 경로를 시험할 수 있다. 사용자 10인 에뮬레이터에서는 --user 10을 넣는다. ACTION_PARAM의 바깥 따옴표가 셸에서 제거되지 않도록 아래처럼 전달한다.
+
+```sh
+adb shell am broadcast -a RECORD_VEHICLE_MOMENT -p io.timestamp.app --es ACTION_PARAM '{"symptom":"끼익 소리"}'
+adb shell 'am broadcast --user 10 -a RECORD_VEHICLE_MOMENT -p io.timestamp.app --es ACTION_PARAM '\''{"symptom":"끼익 소리"}'\'''
+adb shell am broadcast --user 10 -a RECORD_VEHICLE_MOMENT -p io.timestamp.app
+```
+
+첫 요청은 증상을 메모로 저장하며 앱 질문을 생략한다. 마지막 요청은 증상 없이 기록하므로 설정에 따라 앱이 질문한다. 5초 뒤 저장 결과를 확인한다. 응답은 ai.pleos.playground.intent.action.APP_ACTION_RESPONSE 액션에 packageName과 response 문자열로 전달된다. response에는 functionName, status, message, mode, JSON 배열 문자열 data가 포함된다. 새 서비스의 과거 25초는 수집 불가이며, 백그라운드 FGS 시작이 막히면 fail이다. 거짓 성공을 반환하지 않는다.
+
+순서 있는 adb 브로드캐스트의 result data에도 같은 응답 JSON을 돌려주므로, Gleo가 없어도 success 또는 fail과 이유를 명령 결과에서 확인할 수 있다.
