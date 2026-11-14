@@ -240,7 +240,7 @@ fun CarDiagram(selected: Set<String>, modifier: Modifier = Modifier, onToggle: (
                     Text(if (placement.side == 0) area.name else area.name.replace(" ", "\n"), Modifier.clearAndSetSemantics {}.then(if (placement.side == 0)
                         Modifier.background(if (chosen) colors.finding else colors.background, RoundedCornerShape(4.sdp))
                             .padding(2.sdp) else Modifier),
-                        color = if (chosen && placement.side == 0) colors.onPrimary
+                        color = if (chosen && placement.side == 0) colors.onFinding
                             else if (chosen) colors.findingText else colors.textPrimary,
                         fontSize = nameSize, lineHeight = 24.ssp,
                         fontWeight = if (chosen) FontWeight.Bold else FontWeight.Normal,
@@ -269,7 +269,7 @@ fun PartPicker(selected: Set<String>, onToggle: (String) -> Unit, modifier: Modi
                     .border(BorderStroke(1.sdp, if (chosen) AppColors.finding else AppColors.borderStrong), shape)
                     .pressToggle(chosen) { onToggle(part) }.padding(horizontal = 18.sdp, vertical = 12.sdp),
                     contentAlignment = Alignment.Center) {
-                    Label(part, AppType.secondary, if (chosen) AppColors.onPrimary else AppColors.textPrimary)
+                    Label(part, AppType.secondary, if (chosen) AppColors.onFinding else AppColors.textPrimary)
                 }
             }
         }

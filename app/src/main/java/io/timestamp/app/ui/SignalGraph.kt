@@ -20,6 +20,10 @@ import kotlin.math.max
 @Composable
 fun SignalGraph(samples: List<SampleEntity>, modifier: Modifier = Modifier) {
     val axisTextSize = AppType.graphAxis.ssp
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val axisTypeface = androidx.compose.runtime.remember(context) {
+        runCatching { androidx.core.content.res.ResourcesCompat.getFont(context, io.timestamp.app.R.font.asta_sans_regular) }.getOrNull()
+    }
     Panel(modifier, padding = 22) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Label("말한 순간 앞뒤 30초", AppType.cardTitle, bold = true)
@@ -43,6 +47,7 @@ fun SignalGraph(samples: List<SampleEntity>, modifier: Modifier = Modifier) {
                     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         color = (if (finding) colors.findingText else if (primary) colors.primaryText else colors.textTertiary).toArgb()
                         textSize = axisTextSize.toPx()
+                        if (axisTypeface != null) typeface = axisTypeface
                         textAlign = if (end) Paint.Align.RIGHT else if (center) Paint.Align.CENTER else Paint.Align.LEFT
                     }
                     canvas.nativeCanvas.drawText(value, xx, yy, paint)

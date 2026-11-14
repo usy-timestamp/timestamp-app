@@ -202,9 +202,9 @@ private fun Navigation(page: String, onPage: (String) -> Unit, portrait: Boolean
     val entries = listOf("list" to "기록", "report" to "리포트", "settings" to "설정")
     @Composable fun item(key: String, title: String, modifier: Modifier) {
         val selected = page == key || (key == "list" && page == "detail")
-        val color = if (selected) AppColors.onPrimary else AppColors.textSecondary
+        val color = if (selected) AppColors.onSelected else AppColors.textSecondary
         Column(modifier.sizeIn(minWidth = 58.sdp, minHeight = 58.sdp)
-            .background(if (selected) AppColors.primary else Color.Transparent, RoundedCornerShape(16.sdp))
+            .background(if (selected) AppColors.selectedFill else Color.Transparent, RoundedCornerShape(16.sdp))
             .pressClick { onPage(key) }, horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
             LineIcon(key, Modifier.size(26.sdp), color)

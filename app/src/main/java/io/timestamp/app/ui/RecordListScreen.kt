@@ -29,11 +29,11 @@ fun RecordListScreen(records: List<CaptureRecord>, groups: List<SymptomGroup>, d
         Row(Modifier.fillMaxWidth().background(AppColors.surfaceRaised, androidx.compose.foundation.shape.RoundedCornerShape(32.sdp)).padding(4.sdp)) {
             entries.forEach { (key,name) ->
                 Box(Modifier.weight(1f).heightIn(min = 64.sdp)
-                    .background(if (filter == key) AppColors.primary else androidx.compose.ui.graphics.Color.Transparent,
+                    .background(if (filter == key) AppColors.selectedFill else androidx.compose.ui.graphics.Color.Transparent,
                         androidx.compose.foundation.shape.RoundedCornerShape(28.sdp))
                     .pressClick { filter = key }.padding(horizontal = 6.sdp, vertical = 16.sdp), Alignment.Center) {
                     Label("$name "+records.count { matches(it, key) }, AppType.caption,
-                        if (filter == key) AppColors.onPrimary else AppColors.textPrimary, bold = filter == key)
+                        AppColors.textPrimary, bold = filter == key)
                 }
             }
         }

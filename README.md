@@ -51,7 +51,7 @@ gradlew.bat :app:assembleRelease
 - 주행 규제: 주행 중에는 버튼 없는 화면만 보이고, 화면 조작은 P단에서만 합니다
 - 오디오 포커스: 안내 음성은 포커스를 받은 뒤에만 재생하고, 포커스를 잃으면 바로 멈춥니다
 - 백그라운드 정리: 음성 기록을 끄거나 P단이 10분 넘게 이어지면 마이크와 포그라운드 서비스를 내려놓습니다
-- 디자인 가이드: 글자 크기 체계, 주간과 야간 테마, 팝업과 탭 형태, Adaptive Icon
+- 디자인 가이드: Asta Sans 글꼴, 글자 크기 체계, Pleos 색 토큰(무채색 버튼과 탭, 42dot 테마 초록 강조), 주간과 야간 테마, 팝업과 탭 형태, Adaptive Icon
 
 ## 개인정보
 기록은 직접 지울 때까지 차 안에만 저장합니다. 위치는 모으지 않고, 밖으로 보내는 기능도 없습니다. 음성 기록은 설정에서 끌 수 있습니다.
@@ -64,3 +64,4 @@ gradlew.bat :app:assembleRelease
 
 ## 오픈소스
 - AndroidX (Compose, Room, Lifecycle), Kotlin, kotlinx.coroutines, Gson: Apache License 2.0
+- Asta Sans 글꼴 (42dot, https://github.com/42dot/Asta-Sans): SIL Open Font License 1.1, 전문은 `docs/ASTA_SANS_OFL.txt`
