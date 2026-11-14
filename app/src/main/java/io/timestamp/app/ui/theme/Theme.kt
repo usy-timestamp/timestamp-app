@@ -18,27 +18,31 @@ data class AppPalette(val dark: Boolean) {
     val rail = if (dark) Color(0xFF1D1E21) else Color(0xFFEDEEF2)
     val surface = if (dark) Color(0xFF1D1E21) else Color.White
     val surfaceRaised = if (dark) Color(0xFF313236) else Color(0xFFEDEEF2)
+    val popup = if (dark) Color(0xFF313236) else Color.White
     val selected get() = selectedFill
     val border = (if (dark) Color.White else Color(0xFF131417)).copy(alpha = .08f)
     val borderStrong = (if (dark) Color.White else Color(0xFF131417)).copy(alpha = .42f)
     val textPrimary = if (dark) Color.White else Color(0xFF131417)
+    val buttonFill = textPrimary.copy(alpha = if (dark) .12f else .06f)
     val textSecondary = textPrimary.copy(alpha = if (dark) .84f else .72f)
-    val textTertiary = textPrimary.copy(alpha = if (dark) .64f else .56f)
+    // 흐린 글자도 명암 대비 4.5:1 이상 (Pleos UI Design Guide)
+    val textTertiary = textPrimary.copy(alpha = .64f)
     val textOnCard = if (dark) Color.White else Color(0xFF131417)
     // 버튼과 탭은 Pleos 기본 컴포넌트처럼 무채색. 강조 버튼은 Basic button Secondary(진한 회색)
-    val primary = if (dark) Color(0xFFE9EAEC) else Color(0xFF44464E)
+    val primary = if (dark) Color(0xFFE0E1E6) else Color(0xFF44464E) // button_filled_enabled = basic_600
     val onPrimary = if (dark) Color(0xFF131417) else Color.White
     // 선택된 탭과 메뉴: Tabs의 Selected indicator(밝은 표시)
     val selectedFill = if (dark) Color(0xFF44464E) else Color.White
     val onSelected = textPrimary
     // 강조색은 42dot 테마의 Informative active 초록. 라임은 앱 아이콘에만 쓴다
-    val finding = if (dark) Color(0xFF00E074) else Color(0xFF00B85F)
+    val finding = if (dark) Color(0xFF00E074) else Color(0xFF02C265) // informative_active
     val onFinding = Color(0xFF131417)
     val findingText = if (dark) Color(0xFF00E074) else Color(0xFF007D40)
     val primaryText = findingText
     val findingTint = if (dark) Color(0xFF17271E) else Color(0xFFE8F7EE)
     val resolved = if (dark) Color(0xFF00E074) else Color(0xFF007D40)
     val resolvedText = if (dark) Color(0xFF00E074) else Color(0xFF007D40)
+    val dangerText = if (dark) Color(0xFFFF7559) else Color(0xFFBD2609)
     val danger = if (dark) Color(0xFFFF4C28) else Color(0xFFBD2609)
 }
 
@@ -59,7 +63,7 @@ object AppType {
 object AppCorners {
     const val card = 21
     const val dialog = 28
-    const val button = 999
+    const val button = 18
     const val chip = 10
 }
 

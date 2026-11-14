@@ -2,6 +2,10 @@ package io.timestamp.app.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import io.timestamp.app.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -42,7 +46,7 @@ import java.util.Locale
 fun Label(value: String, size: Int = AppType.body, color: Color = AppColors.textPrimary,
           bold: Boolean = false, modifier: Modifier = Modifier, maxLines: Int = 3, textAlign: androidx.compose.ui.text.style.TextAlign? = null) {
     Text(value, modifier, color, fontSize = size.coerceAtLeast(20).ssp, lineHeight = when (size) {
-            36 -> 44; 28 -> 36; 26 -> 34; 24 -> 28; 20 -> 24; 32 -> 40; 40 -> 52; 48 -> 64; else -> (size * 1.3f).toInt()
+            36 -> 44; 28 -> 36; 26 -> 34; 24 -> 28; 20 -> 24; 30 -> 38; 32 -> 40; 40 -> 52; 48 -> 64; else -> (size * 1.3f).toInt()
         }.ssp,
         fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
         textAlign = textAlign, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
@@ -52,7 +56,7 @@ fun Label(value: String, size: Int = AppType.body, color: Color = AppColors.text
 fun Panel(modifier: Modifier = Modifier, finding: Boolean = false, padding: Int = 24, popup: Boolean = false,
           content: @Composable ColumnScope.() -> Unit) {
     Surface(modifier, shape = RoundedCornerShape(AppCorners.card.sdp),
-        color = if (popup) AppColors.surfaceRaised else if (finding) AppColors.findingTint else AppColors.surface,
+        color = if (popup) AppColors.popup else if (finding) AppColors.findingTint else AppColors.surface,
         border = BorderStroke((if (finding) 2 else 1).sdp, if (finding) AppColors.findingText else AppColors.border)) {
         Column(Modifier.padding(padding.sdp), verticalArrangement = Arrangement.spacedBy(14.sdp), content = content)
     }
@@ -60,18 +64,21 @@ fun Panel(modifier: Modifier = Modifier, finding: Boolean = false, padding: Int 
 
 @Composable
 fun Action(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
-           secondary: Boolean = false, enabled: Boolean = true, height: Int = 58, danger: Boolean = false, busy: Boolean = false) {
+           secondary: Boolean = false, enabled: Boolean = true, height: Int = 58, busy: Boolean = false) {
     val interaction = remember { MutableInteractionSource() }
+    val container = if (secondary) AppColors.buttonFill else AppColors.primary
+    val content = if (secondary) AppColors.textPrimary else AppColors.onPrimary
     Button(onClick, modifier.sizeIn(minWidth = 58.sdp, minHeight = height.coerceAtLeast(58).sdp).pressEffect(interaction), enabled = enabled && !busy,
         interactionSource = interaction, elevation = ButtonDefaults.buttonElevation(0.sdp, 0.sdp, 0.sdp, 0.sdp, 0.sdp),
         shape = RoundedCornerShape(AppCorners.button.sdp),
-        border = if (secondary) BorderStroke(1.sdp, AppColors.borderStrong) else null,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (danger && !secondary) AppColors.danger else if (secondary) Color.Transparent else AppColors.primary,
-            contentColor = if (danger && !secondary) Color.White else if (danger) AppColors.danger else if (secondary) AppColors.textPrimary else AppColors.onPrimary),
+            containerColor = container,
+            contentColor = content,
+            disabledContainerColor = container.copy(alpha = container.alpha * .5f),
+            disabledContentColor = AppColors.textTertiary),
         contentPadding = PaddingValues(horizontal = 22.sdp, vertical = 12.sdp)) {
         if (busy) CircularProgressIndicator(Modifier.size(24.sdp), color = if (secondary) AppColors.textPrimary else AppColors.onPrimary, strokeWidth = 3.sdp)
-        else Label(label, AppType.secondary, if (danger && !secondary) Color.White else if (!enabled) AppColors.textSecondary else if (danger) AppColors.danger else if (secondary) AppColors.textPrimary else AppColors.onPrimary, bold = !secondary)
+        else Label(label, AppType.secondary, if (!enabled) AppColors.textTertiary else content, bold = !secondary)
     }
 }
 
@@ -105,7 +112,7 @@ fun statusName(status: String) = when (status) {
 fun StatusTag(status: String) = Tag(statusName(status), when (status) {
     "REPAIRED" -> AppColors.resolvedText
     "RESOLVED" -> AppColors.resolvedText
-    "RECURRED" -> AppColors.danger
+    "RECURRED" -> AppColors.dangerText
     else -> AppColors.textSecondary
 })
 
@@ -123,7 +130,7 @@ fun GearChip(state: DrivingState) {
                 state.showDrivingScreen -> "${state.gear ?: ""} 주행 중".trim()
                 state.gear == "P" -> "P 정차 중"
                 else -> "기어 수집 불가"
-            }, 18, AppColors.textSecondary)
+            }, AppType.caption, AppColors.textSecondary)
         }
     }
 }
@@ -134,6 +141,11 @@ fun Header(title: String, subtitle: String? = null, driving: DrivingState, back:
         horizontalArrangement = Arrangement.spacedBy(16.sdp)) {
         if (back != null) IconButton(back, Modifier.size(64.sdp)) {
             LineIcon("back", Modifier.size(36.sdp).then(Modifier.semantics { contentDescription = "뒤로" }), AppColors.textPrimary)
+        }
+        else Box(Modifier.size(48.sdp).clip(RoundedCornerShape(12.sdp)).background(Color(0xFF0A0E24)),
+            contentAlignment = Alignment.Center) {
+            Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null,
+                modifier = Modifier.requiredSize(79.sdp))
         }
         Column(Modifier.weight(1f)) {
             Label(title, AppType.screenTitle, bold = true)

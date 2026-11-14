@@ -1,8 +1,6 @@
 package io.timestamp.app.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,7 +11,7 @@ import io.timestamp.app.ui.theme.*
 fun ShopScreen(group: SymptomGroup, close: () -> Unit, reminder: Boolean, toggleReminder: () -> Unit, busy: Boolean) {
     val portrait = LocalPortrait.current
     Column(Modifier.fillMaxSize().padding((if (portrait) 24 else 40).sdp)
-        .verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
+        .scrollWithBar(), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.sdp), verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
                 Label("정비사님께 보여 드리는 화면", AppType.secondary, AppColors.textSecondary)

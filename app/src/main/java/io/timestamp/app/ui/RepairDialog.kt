@@ -2,8 +2,6 @@ package io.timestamp.app.ui
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.*
@@ -33,7 +31,7 @@ fun RepairDialog(group: SymptomGroup, dismiss: () -> Unit, save: (Long, String?)
     DisposableEffect(Unit) { onDispose { picker?.dismiss() } }
     Dialog({ if (!busy) dismiss() }, DialogProperties(usePlatformDefaultWidth = false)) {
         Panel(Modifier.widthIn(max = 760.sdp).fillMaxWidth(.94f), padding = if (portrait) 24 else 32, popup = true) {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
+            Column(Modifier.scrollWithBar(), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
                 Label("수리 완료로 표시할까요?", 32, bold = true, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Label("${group.name}, 기록 ${group.count}건", AppType.body, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 CheckRow(selected, "이 증상 기록에 적용", !busy) { selected = it }

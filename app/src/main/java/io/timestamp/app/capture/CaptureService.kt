@@ -17,6 +17,7 @@ import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
+import io.timestamp.app.R
 import io.timestamp.app.BuildConfig
 import io.timestamp.app.data.AppDatabase
 import io.timestamp.app.data.AppSettingsEntity
@@ -286,7 +287,7 @@ class CaptureService : Service() {
         val stop = PendingIntent.getService(this, 1, Intent(this, CaptureService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val notification = Notification.Builder(this, CHANNEL)
-            .setSmallIcon(android.R.drawable.ic_menu_save).setContentTitle("타임 스탬프 기록 중")
+            .setSmallIcon(R.drawable.ic_stat_timestamp).setContentTitle("타임 스탬프 기록 중")
             .setContentText("차량 신호를 준비하고 있어요").setContentIntent(open)
             .setOngoing(true).addAction(Notification.Action.Builder(null, "기록 멈추기", stop).build()).build()
         if (Build.VERSION.SDK_INT >= 34) {

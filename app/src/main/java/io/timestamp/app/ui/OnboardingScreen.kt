@@ -1,8 +1,6 @@
 package io.timestamp.app.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -32,7 +30,7 @@ fun OnboardingScreen(permissions: PermissionState, consent: Boolean, agree: (Boo
         }
     }
     @Composable fun permissionsAndConsent() {
-        Label("시작하려면 허용해 주세요", 22, bold = true)
+        Label("시작하려면 허용해 주세요", AppType.cardTitle, bold = true)
         PermissionCard("마이크", "한마디를 알아듣기 위해 (필수)", permissions.microphone) { request("microphone") }
         PermissionCard("차량 속도와 기어", "그 순간 차 상태를 남기기 위해 (필수)", permissions.carSpeed && permissions.carPowertrain) { request("car") }
         PrivacyNotice()
@@ -43,15 +41,15 @@ fun OnboardingScreen(permissions: PermissionState, consent: Boolean, agree: (Boo
             if (!consent && !busy) Box(Modifier.matchParentSize().pressClick { start() })
         }
     }
-    if (portrait) Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.sdp),
+    if (portrait) Column(Modifier.fillMaxSize().scrollWithBar().padding(24.sdp),
         verticalArrangement = Arrangement.spacedBy(20.sdp)) {
         introduction()
         permissionsAndConsent()
     } else Row(Modifier.fillMaxSize().padding(horizontal = 44.sdp, vertical = 36.sdp),
         horizontalArrangement = Arrangement.spacedBy(36.sdp)) {
-        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()),
+        Column(Modifier.weight(1f).fillMaxHeight().scrollWithBar(),
             verticalArrangement = Arrangement.spacedBy(24.sdp)) { introduction() }
-        Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()),
+        Column(Modifier.weight(1f).fillMaxHeight().scrollWithBar(),
             verticalArrangement = Arrangement.spacedBy(16.sdp)) { permissionsAndConsent() }
     }
 }

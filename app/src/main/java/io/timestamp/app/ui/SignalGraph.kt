@@ -32,7 +32,7 @@ fun SignalGraph(samples: List<SampleEntity>, modifier: Modifier = Modifier) {
         // 가로 대 세로 비율을 고정한다. 높이가 정해지지 않으면 그래프가 납작해져 축이 뒤집혀 보인다
         val colors = AppColors
         Canvas(Modifier.fillMaxWidth().aspectRatio(1.7f).padding(top = 16.sdp)
-            .semantics { contentDescription = "말하기 25초 전부터 5초 후까지의 속도와 브레이크 그래프. 라임 띠는 브레이크를 밟은 구간" }) {
+            .semantics { contentDescription = "말하기 25초 전부터 5초 후까지의 속도와 브레이크 그래프. 초록 띠는 브레이크를 밟은 구간" }) {
             val left = 42.sdpValue(size.width)
             val right = size.width - 18.sdpValue(size.width)
             val top = 40.sdpValue(size.width)
@@ -64,7 +64,7 @@ fun SignalGraph(samples: List<SampleEntity>, modifier: Modifier = Modifier) {
                 if (byOffset[offset]?.brakePressed == true) {
                     val start = max(left, x(offset) - unit / 2)
                     val end = minOf(right, x(offset) + unit / 2)
-                    drawRect(colors.finding.copy(alpha = .45f), Offset(start, bottom - (bottom - top) * .25f),
+                    drawRect(colors.findingText, Offset(start, bottom - (bottom - top) * .25f),
                         Size(end - start, (bottom - top) * .25f))
                 }
                 val speed = byOffset[offset]?.speedKmh?.takeIf(Float::isFinite)

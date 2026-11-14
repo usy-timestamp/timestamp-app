@@ -1,8 +1,6 @@
 package io.timestamp.app.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -18,7 +16,7 @@ fun ReportScreen(groups: List<SymptomGroup>, group: SymptomGroup?, driving: Driv
                  toggleReminder: () -> Unit, busy: Boolean) {
     val portrait = LocalPortrait.current
     var expanded by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().then(if (portrait) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+    Column(Modifier.fillMaxSize().then(if (portrait) Modifier.scrollWithBar() else Modifier),
         verticalArrangement = Arrangement.spacedBy(18.sdp)) {
         if (group == null) {
             Header("리포트", driving = driving)
@@ -54,12 +52,12 @@ fun ReportScreen(groups: List<SymptomGroup>, group: SymptomGroup?, driving: Driv
             MissingNotice(group)
             actions()
         } else Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(20.sdp)) {
-            Column(Modifier.weight(1.9f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(18.sdp)) {
+            Column(Modifier.weight(1.9f).fillMaxHeight().scrollWithBar(), verticalArrangement = Arrangement.spacedBy(18.sdp)) {
                 ConditionCard(group, Modifier.fillMaxWidth())
                 DashcamCard(group, Modifier.fillMaxWidth())
                 MissingNotice(group)
             }
-            Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.sdp)) {
+            Column(Modifier.weight(1f).fillMaxHeight().scrollWithBar(), verticalArrangement = Arrangement.spacedBy(14.sdp)) {
                 GroupSummary(group, Modifier.fillMaxWidth())
                 actions()
             }
@@ -75,7 +73,7 @@ fun GroupSummary(group: SymptomGroup, modifier: Modifier = Modifier) {
             CarDiagram(setOf(group.part), Modifier.width((if (portrait) 64 else 106).sdp)
                 .height((if (portrait) 120 else 198).sdp), compact = true)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.sdp)) {
-                Label(group.part, 22, bold = true)
+                Label(group.part, AppType.cardTitle, bold = true)
                 Label("${group.count}건 모두 같은 부위", AppType.secondary, AppColors.textSecondary)
                 if (group.records.all { it.capture.status == "REPAIRED" }) StatusTag("REPAIRED")
             }

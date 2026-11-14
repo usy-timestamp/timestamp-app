@@ -1,8 +1,6 @@
 package io.timestamp.app.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -40,11 +38,11 @@ fun RecordDetailScreen(record: CaptureRecord, driving: DrivingState, back: () ->
     }
     @Composable fun actions() {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.sdp)) {
-            Action("이 기록 지우기", { confirmDelete = true }, Modifier.weight(1f), secondary = true, busy = busy, enabled = !busy, danger = true)
+            Action("이 기록 지우기", { confirmDelete = true }, Modifier.weight(1f), secondary = true, busy = busy, enabled = !busy)
             Action("부위 저장", { save(selected) }, Modifier.weight(1f), busy = busy, enabled = !busy)
         }
     }
-    Column(Modifier.fillMaxSize().then(if (portrait) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+    Column(Modifier.fillMaxSize().then(if (portrait) Modifier.scrollWithBar() else Modifier),
         verticalArrangement = Arrangement.spacedBy(20.sdp)) {
         Header("${dateTimeText(record.capture.createdAtMs)} 기록", driving = driving, back = back)
         Row(horizontalArrangement = Arrangement.spacedBy(12.sdp)) {
@@ -58,10 +56,10 @@ fun RecordDetailScreen(record: CaptureRecord, driving: DrivingState, back: () ->
             actions()
         } else Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(24.sdp)) {
             Column(Modifier.width(maxOf(CarDiagramLayout.pickerWidth.sdp, CarDiagramLayout.minimumPickerWidth.dp))
-                .fillMaxHeight().verticalScroll(rememberScrollState())) {
+                .fillMaxHeight().scrollWithBar()) {
                 PartPicker(selected, toggle, Modifier.fillMaxWidth())
             }
-            Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.sdp)) {
+            Column(Modifier.weight(1f).fillMaxHeight().scrollWithBar(), verticalArrangement = Arrangement.spacedBy(16.sdp)) {
                 SignalGraph(record.samples, Modifier.fillMaxWidth())
                 values()
                 actions()
@@ -88,11 +86,11 @@ fun ConfirmDialog(title: String, message: String, confirm: String, dismiss: () -
     androidx.compose.ui.window.Dialog({ if (!busy) dismiss() },
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Panel(Modifier.widthIn(max = 760.sdp).fillMaxWidth(.94f), popup = true) {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
+            Column(Modifier.scrollWithBar(), verticalArrangement = Arrangement.spacedBy(20.sdp)) {
                 Label(title, 32, bold = true, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Label(message, AppType.body, AppColors.textSecondary, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.sdp)) {
-                    Action(confirm, accept, Modifier.weight(1f), busy = busy, enabled = !busy, danger = true)
+                    Action(confirm, accept, Modifier.weight(1f), busy = busy, enabled = !busy)
                     Action("취소", dismiss, Modifier.weight(1f), secondary = true, busy = busy, enabled = !busy)
                 }
             }
