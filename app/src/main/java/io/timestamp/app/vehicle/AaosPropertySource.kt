@@ -41,7 +41,8 @@ class AaosPropertySource(
                 car = Car.createCar(context)
                 manager = car?.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager
                 try {
-                    if (!gearOnly) uxManager = car?.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager
+                    // 기어만 보는 감시도 주행 제한 상태는 함께 받는다. 기어를 못 읽는 차에서도 주행 화면 판단이 되게 하기 위함
+                    uxManager = car?.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager
                     driving.value = driving.value.copy(
                         restricted = uxManager?.currentCarUxRestrictions?.isRequiresDistractionOptimization == true,
                     )
